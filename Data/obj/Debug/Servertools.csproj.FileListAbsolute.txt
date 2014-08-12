@@ -1,0 +1,5 @@
+D:\Downloads\Unturned Modding\Unturned Modding\Admin commands\Data\obj\Debug\Servertools.csprojResolveAssemblyReference.cache
+D:\Downloads\Unturned Modding\Unturned Modding\Admin commands\Data\bin\Debug\AdminCommands.dll
+D:\Downloads\Unturned Modding\Unturned Modding\Admin commands\Data\bin\Debug\AdminCommands.pdb
+D:\Downloads\Unturned Modding\Unturned Modding\Admin commands\Data\obj\Debug\AdminCommands.dll
+D:\Downloads\Unturned Modding\Unturned Modding\Admin commands\Data\obj\Debug\AdminCommands.pdb

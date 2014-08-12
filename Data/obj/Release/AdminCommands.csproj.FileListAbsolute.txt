@@ -1,0 +1,4 @@
+D:\Development\Downloaded Source\Admin commands\Data\bin\Release\AdminCommands.dll
+D:\Development\Downloaded Source\Admin commands\Data\bin\Release\AdminCommands.pdb
+D:\Development\Downloaded Source\Admin commands\Data\obj\Release\AdminCommands.dll
+D:\Development\Downloaded Source\Admin commands\Data\obj\Release\AdminCommands.pdb
