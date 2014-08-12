@@ -1,9 +1,11 @@
 Admin Commands For Unturned
 =====
 
+
+
 This is the Admin server management commands for servers running Unturned
 
-**(using <number> asks for confirmation, because player numbers seem basically random)**
+**(using `<number>` asks for confirmation, because player numbers seem basically random)**
  Command List | What the command does 
  --------------------- | ------------------------------------- 
  `/ban <player name>/<number>` | Bans a player from the server 
