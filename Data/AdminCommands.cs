@@ -150,10 +150,6 @@ namespace Admin_Commands
 
         public bool needsVotingReward(String name)
         {
-
-
-
-
             return false;
         }
 
