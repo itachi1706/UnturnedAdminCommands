@@ -47,9 +47,9 @@ namespace Admin_Commands
         /*
          * Administrative Permission Level
          * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason)
-         * 2: Trusted Moderation Commands (kill, resetZombies, resetItems, repairVehicles, refuelVehicles)
-         * 3: Admin Commands (enableWhiteList, disableWhiteList)
-         * 4: OP (setItemDelay, reloadCommands)
+         * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems, repairVehicles, refuelVehicles)
+         * 3: Admin Commands (enableWhiteList, disableWhiteList, setannouncedelay)
+         * 4: OP (setItemDelay, reloadCommands, reloadBans)
          */
         private Int32[] AdminPermissionLevel;
 
