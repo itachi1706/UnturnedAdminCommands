@@ -46,8 +46,8 @@ namespace Admin_Commands
 
         /*
          * Administrative Permission Level
-         * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason)
-         * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems, repairVehicles, refuelVehicles)
+         * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason, repairVehicles, refuelVehicles)
+         * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems)
          * 3: Admin Commands (enableWhiteList, disableWhiteList, setannouncedelay)
          * 4: OP (setItemDelay, reloadCommands, reloadBans)
          */
@@ -593,7 +593,7 @@ namespace Admin_Commands
                             SpawnItems.reset();
                             NetworkChat.sendAlert(sender + " has respawned all items");
                         }
-                        else if (commando.StartsWith("/repairvehicles") && permLvl >= 2)
+                        else if (commando.StartsWith("/repairvehicles") && permLvl >= 1)
                         {
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
@@ -602,7 +602,7 @@ namespace Admin_Commands
                             }
                             NetworkChat.sendAlert(sender + " has repaired all vehicles");
                         }
-                        else if (commando.StartsWith("/refuelvehicles") && permLvl >= 2)
+                        else if (commando.StartsWith("/refuelvehicles") && permLvl >= 1)
                         {
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
