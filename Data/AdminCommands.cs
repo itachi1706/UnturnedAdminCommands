@@ -44,6 +44,15 @@ namespace Admin_Commands
         private String[] AdminNames;
         private String[] AdminSteamIDs;
 
+        /*
+         * Administrative Permission Level
+         * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason)
+         * 2: Trusted Moderation Commands (kill, resetZombies, resetItems, repairVehicles, refuelVehicles)
+         * 3: Admin Commands (enableWhiteList, disableWhiteList)
+         * 4: OP (setItemDelay, reloadCommands)
+         */
+        private Int32[] AdminPermissionLevel;
+
         public String[] AnnounceMessages;
 
         public String[] WhitelistedPlayers;
@@ -59,18 +68,26 @@ namespace Admin_Commands
             if (!File.Exists("F:/Unturned Server/ServerData/UnturnedAdmins.txt"))  //create a template for admins
             {
                 System.IO.StreamWriter file = new StreamWriter("F:/Unturned Server/ServerData/UnturnedAdmins.txt", true);
-                file.WriteLine("Nessin:76561197976976379");
-                file.WriteLine("Some Other Admin:12345789");
+                file.WriteLine("Nessin:76561197976976379:4");
+                file.WriteLine("Some Other Admin:12345789:4");
 
                 file.Close();
             }
             string[] lines = System.IO.File.ReadAllLines(@"F:/Unturned Server/ServerData/UnturnedAdmins.txt");
             AdminNames = new String[lines.Length];
             AdminSteamIDs = new String[lines.Length];
+            AdminPermissionLevel = new Int32[lines.Length];
             for (int i = 0; i < lines.Length; i++)
             {
                 AdminNames[i] = lines[i].Split(':')[0];
                 AdminSteamIDs[i] = lines[i].Split(':')[1];
+                try { 
+                    AdminPermissionLevel[i] = Convert.ToInt32(lines[i].Split(':')[2]);
+                }
+                catch (System.Exception)
+                {
+                    AdminPermissionLevel[i] = 4;
+                }
             }
 
             //WHITELIST
@@ -404,6 +421,18 @@ namespace Admin_Commands
             return false;
         }
 
+        private int getAdminLevel(String name)
+        {
+            for (int i = 0; i < AdminNames.Length; i++)
+            {
+                if (AdminNames[i].Equals(name) && AdminSteamIDs[i].Equals(getSteamIDByPlayerName(name)))
+                {
+                    return AdminPermissionLevel[i];
+                }
+            }
+            return -1;
+        }
+
         private void kickFakeAdmins()
         {
             if (updater2 <= 1f)
@@ -494,180 +523,179 @@ namespace Admin_Commands
 
                 if (isAdmin(sender))
                 {
-                    if (commando.StartsWith("/repeat"))
+                    if (getAdminLevel(sender) == -1)
                     {
-                        NetworkChat.sendAlert(commando.Substring(8));
+                        getNetworkChat().askChat("An error occured! You appear to not have Admin Rights!", 2, getNetworkPlayerByPlayerName(sender));
                     }
-
-                    else if (commando.StartsWith("/ban"))
+                    else
                     {
-                        String naam = commando.Substring(5);
-                        if (naam.Length < 3)
+                        int permLvl = getAdminLevel(sender);
+                        if (commando.StartsWith("/repeat") && permLvl >= 1)
                         {
-                            naam = names[Convert.ToInt32(naam)];
-                            getNetworkChat().askChat("Ban " + naam + " ?  /yy to confirm", 2, getNetworkPlayerByPlayerName(sender));
-                            tempBanName = naam;
+                            NetworkChat.sendAlert(commando.Substring(8));
                         }
-                        else
+
+                        else if (commando.StartsWith("/ban") && permLvl >= 1)
                         {
-                            ID = getSteamIDByPlayerName(naam);
-                            if (!ID.Equals(""))
+                            String naam = commando.Substring(5);
+                            if (naam.Length < 3)
+                            {
+                                naam = names[Convert.ToInt32(naam)];
+                                getNetworkChat().askChat("Ban " + naam + " ?  /yy to confirm", 2, getNetworkPlayerByPlayerName(sender));
+                                tempBanName = naam;
+                            }
+                            else
+                            {
+                                ID = getSteamIDByPlayerName(naam);
+                                if (!ID.Equals(""))
+                                {
+                                    playerName = naam;
+                                    BAN();
+                                }
+                            }
+                        }
+                        else if (commando.StartsWith("/kick") && permLvl >= 1)
+                        {
+                            String naam = commando.Substring(6);
+                            if (naam.Length < 3)
+                            {
+                                naam = names[Convert.ToInt32(naam)];
+                                getNetworkChat().askChat("Kick " + naam + " ?  /y to confirm", 2, getNetworkPlayerByPlayerName(sender));
+                                tempKickName = naam;
+                            }
+                            else
                             {
                                 playerName = naam;
+                                KICK();
+                            }
+
+                        }
+                        else if (commando.Equals("/y"))
+                        { // kick
+                            playerName = tempKickName;
+                            KICK();
+                        }
+                        else if (commando.Equals("/yy"))
+                        { //ban
+                            ID = getSteamIDByPlayerName(tempBanName);
+                            if (!ID.Equals(""))
+                            {
+                                playerName = tempBanName;
                                 BAN();
                             }
                         }
-
-                    }
-                    else if (commando.StartsWith("/kick"))
-                    {
-                        String naam = commando.Substring(6);
-                        if (naam.Length < 3)
+                        else if (commando.StartsWith("/reason") && permLvl >= 1)
                         {
-                            naam = names[Convert.ToInt32(naam)];
-                            getNetworkChat().askChat("Kick " + naam + " ?  /y to confirm", 2, getNetworkPlayerByPlayerName(sender));
-                            tempKickName = naam;
+                            reason = commando.Substring(8);
                         }
-                        else
+                        else if (commando.StartsWith("/resetitems") && permLvl >= 2)
                         {
-                            playerName = naam;
-                            KICK();
+                            SpawnItems.reset();
+                            NetworkChat.sendAlert(sender + " has respawned all items");
+                        }
+                        else if (commando.StartsWith("/repairvehicles") && permLvl >= 2)
+                        {
+                            Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
+                            foreach (Vehicle vehicle in vehicles)
+                            {
+                                vehicle.heal(1000);
+                            }
+                            NetworkChat.sendAlert(sender + " has repaired all vehicles");
+                        }
+                        else if (commando.StartsWith("/refuelvehicles") && permLvl >= 2)
+                        {
+                            Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
+                            foreach (Vehicle vehicle in vehicles)
+                            {
+                                vehicle.fill(1000);
+                            }
+                            NetworkChat.sendAlert(sender + " has refueled all vehicles");
                         }
 
-                    }
-                    else if (commando.Equals("/y"))
-                    { // kick
-                        playerName = tempKickName;
-                        KICK();
-                    }
-                    else if (commando.Equals("/yy"))
-                    { //ban
-                        ID = getSteamIDByPlayerName(tempBanName);
-                        if (!ID.Equals(""))
+                        else if (commando.StartsWith("/resetzombies") && permLvl >= 2)
                         {
-                            playerName = tempBanName;
-                            BAN();
+                            SpawnAnimals.reset();
+                            NetworkChat.sendAlert(sender + " has respawned all zombies");
                         }
-                    }
-                    else if (commando.StartsWith("/reason"))
-                    {
-                        reason = commando.Substring(8);
-                    }
-                    else if (commando.StartsWith("/resetitems"))
-                    {
-                        SpawnItems.reset();
-                        NetworkChat.sendAlert(sender + " has respawned all items");
-                    }
-                    else if (commando.StartsWith("/repairvehicles"))
-                    {
-                        Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
-                        foreach (Vehicle vehicle in vehicles)
+                        else if (commando.StartsWith("/reloadbans") && permLvl >= 3)
                         {
-                            vehicle.heal(1000);
+                            NetworkBans.load();
                         }
-                        NetworkChat.sendAlert(sender + " has repaired all vehicles");
-                    }
-                    else if (commando.StartsWith("/refuelvehicles"))
-                    {
-                        Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
-                        foreach (Vehicle vehicle in vehicles)
+                        else if (commando.StartsWith("/setitemsdelay") && permLvl == 4)
                         {
-                            vehicle.fill(1000);
+                            String seconds = commando.Substring(15);
+                            setItemResetIntervalInSeconds(Convert.ToInt32(seconds));
                         }
-                        NetworkChat.sendAlert(sender + " has refueled all vehicles");
-                    }
-
-                    else if (commando.StartsWith("/resetzombies"))
-                    {
-                        SpawnAnimals.reset();
-                        NetworkChat.sendAlert(sender + " has respawned all zombies");
-                    }
-                    else if (commando.StartsWith("/reloadbans"))
-                    {
-                        NetworkBans.load();
-                    }
-                    else if (commando.StartsWith("/setitemsdelay"))
-                    {
-                        String seconds = commando.Substring(15);
-                        setItemResetIntervalInSeconds(Convert.ToInt32(seconds));
-                    }
-                    else if (commando.StartsWith("/setannouncedelay"))
-                    {
-                        String seconds = commando.Substring(18);
-                        setAnnounceIntervalInSeconds(Convert.ToInt32(seconds));
-                    }
-                    else if (commando.StartsWith("/reloadCommands"))
-                    {
-                        reloadCommands();
-                    }
-                    else if (commando.StartsWith("/enablewhitelist"))
-                    {
-                        usingWhitelist = true;
-                    }
-                    else if (commando.StartsWith("/disablewhitelist"))
-                    {
-                        usingWhitelist = false;
-                    }
-                    else if (commando.StartsWith("/reloadCommands"))
-                    {
-                        reloadCommands();
-                    }
-                    else if (commando.StartsWith("/unban"))
-                    {
-                        String name = commando.Substring(7);
-                        unban(name);
-
-                    }
-                    else if (commando.StartsWith("/tptome"))
-                    {
-                        String name = commando.Substring(8);
-                        if (name.Length < 3)
+                        else if (commando.StartsWith("/setannouncedelay") && permLvl >= 3)
                         {
-                            name = names[Convert.ToInt32(name)];
+                            String seconds = commando.Substring(18);
+                            setAnnounceIntervalInSeconds(Convert.ToInt32(seconds));
                         }
-                        //big ass line incoming
-                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
-                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation });
-                    }
-
-                    else if (commando.Equals("/tpall"))
-                    {
-                        foreach (String name in names)
+                        else if (commando.StartsWith("/reloadCommands") && permLvl >= 4)
                         {
-
-                            //There's probably a shorter way to this teleport stuff but hey this works xD
+                            reloadCommands();
+                        }
+                        else if (commando.StartsWith("/enablewhitelist") && permLvl >= 3)
+                        {
+                            usingWhitelist = true;
+                        }
+                        else if (commando.StartsWith("/disablewhitelist") && permLvl >= 3)
+                        {
+                            usingWhitelist = false;
+                        }
+                        else if (commando.StartsWith("/unban") && permLvl >= 1)
+                        {
+                            String name = commando.Substring(7);
+                            unban(name);
+                        }
+                        else if (commando.StartsWith("/tptome") && permLvl >= 1)
+                        {
+                            String name = commando.Substring(8);
+                            if (name.Length < 3)
+                            {
+                                name = names[Convert.ToInt32(name)];
+                            }
+                            //big ass line incoming
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation });
                         }
-                    }
 
-                    else if (commando.StartsWith("/tp"))  //make sure this goes under /tptome
-                    {
-                        String name = commando.Substring(4);
-                        if (name.Length < 3)
+                        else if (commando.Equals("/tpall") && permLvl >= 2)
                         {
-                            name = names[Convert.ToInt32(name)];
+                            foreach (String name in names)
+                            {
+
+                                //There's probably a shorter way to this teleport stuff but hey this works xD
+                                NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
+                                NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation });
+                            }
                         }
-                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position;
-                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.rotation });
 
-                    }
+                        else if (commando.StartsWith("/tp") && permLvl >= 1)  //make sure this goes under /tptome
+                        {
+                            String name = commando.Substring(4);
+                            if (name.Length < 3)
+                            {
+                                name = names[Convert.ToInt32(name)];
+                            }
+                            NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position;
+                            NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.rotation });
 
+                        }
 
+                        else if (commando.StartsWith("/kill") && permLvl >= 2)
+                        {
+                            //All of these things are buggy as fuck
+                            String naam = commando.Substring(6);
+                            // NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().tellAllLife(10,0,0,0,true,true);
+                            // NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().tellDead(true, "You were shot in the face with a rocket launcher");
+                            NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().damage(500, "You were struck down by the Wrath of the Gods!!!");
+                        }
 
-
-                    else if (commando.StartsWith("/kill"))
-                    {
-                        //All of these things are buggy as fuck
-                        String naam = commando.Substring(6);
-                        // NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().tellAllLife(10,0,0,0,true,true);
-                        // NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().tellDead(true, "You were shot in the face with a rocket launcher");
-                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().damage(500, "You were struck down by the Wrath of the Gods!!!");
-                    }
-
-                    else if (commando.Equals("/online"))
-                    {
-                        getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
+                        else if (commando.Equals("/online"))
+                        {
+                            getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
+                        }
                     }
 
                 } // end of isAdmin()
