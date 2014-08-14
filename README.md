@@ -41,7 +41,9 @@ This is the Admin server management commands for servers running Unturned
  `/logmsg` | *DEBUG* Logs a message to CONSOLE | 4
  
  **Permission Level System**
+ 
  *Each level inherits the commands of the previous level*
+ 
  Level | Rank | Description
  ----- | ---- | -----------
  0 | Normal | Normal User
