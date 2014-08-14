@@ -14,13 +14,13 @@ namespace Admin_Commands
 
     internal class AdminCommands : MonoBehaviour
     {
+
         public String playerName = "";
         public String playerID;
         
         public float updater;
         public float updater2;
         public float updater3;
-
 
 
         private Vector2 scrollViewVector = Vector2.zero;
@@ -59,7 +59,6 @@ namespace Admin_Commands
         private Int32[] AdminPermissionLevel;
         
 
-
         public void Start()
         {
             Directory.CreateDirectory("Unturned_Data/Managed/mods/AdminCommands");
@@ -78,14 +77,17 @@ namespace Admin_Commands
             AdminPermissionLevel = new Int32[lines.Length];
             for (int i = 0; i < lines.Length; i++)
             {
-                AdminNames[i] = lines[i].Split(':')[0];
-                AdminSteamIDs[i] = lines[i].Split(':')[1];
-                try { 
-                    AdminPermissionLevel[i] = Convert.ToInt32(lines[i].Split(':')[2]);
-                }
-                catch (System.Exception)
+                if (lines[i].Length > 10)
                 {
-                    AdminPermissionLevel[i] = 4;
+                    AdminNames[i] = lines[i].Split(':')[0];
+                    AdminSteamIDs[i] = lines[i].Split(':')[1];
+                    try { 
+                        AdminPermissionLevel[i] = Convert.ToInt32(lines[i].Split(':')[2]);
+                    }
+                    catch (System.Exception)
+                    {
+                        AdminPermissionLevel[i] = 4;
+                    }
                 }
             }
 
@@ -136,10 +138,7 @@ namespace Admin_Commands
 
             //Screen.showCursor = true;
 
-            /*for (int i = 0; i < 80; i++)
-            {
-                Log(getMsgByNum(i));
-            }*/
+
         }
 
         public void announcesTimeElapsed(object sender, ElapsedEventArgs e)
@@ -206,10 +205,10 @@ namespace Admin_Commands
         {
             if (this.updater <= 1f || forceUpdate == true)
             {
-                //NetworkChat.sendAlert("updatePlayerList");
                 Player[] players = UnityEngine.Object.FindObjectsOfType(typeof(Player)) as Player[];
                 names = new String[players.Length];
                 ids = new String[players.Length];
+                FieldInfo[] fis = typeof(NetworkUser).GetFields();
                 for (int i = 0; i < players.Length; i++)
                 {
                     names[i] = players[i].name;
@@ -218,7 +217,7 @@ namespace Admin_Commands
                     NetworkUser nu = NetworkUserList.getUserFromPlayer(np);
 
                     int num = 0;
-                    FieldInfo[] fis = typeof(NetworkUser).GetFields();
+
 
                     foreach (FieldInfo fi in fis)
                     {
@@ -227,6 +226,7 @@ namespace Admin_Commands
                             try
                             {
                                 ids[i] = fi.GetValue(nu).ToString();
+                                break;
                             }
                             catch (Exception)
                             {
@@ -241,7 +241,7 @@ namespace Admin_Commands
                     names = new String[1];
                     ids = new String[1];
                 }
-                this.updater = 100f;
+                this.updater = 500f;
             }
         }
 
@@ -249,30 +249,7 @@ namespace Admin_Commands
 
         private String getLastMessagePlayerName()
         {
-            NetworkChat[] list = UnityEngine.Object.FindObjectsOfType(typeof(NetworkChat)) as NetworkChat[];
-            int num = 0;
-            FieldInfo[] fis = typeof(NetworkChat).GetFields();
-            foreach (NetworkChat nu in list)
-            {
-                //Log("NetworkChat:" + num);
-                foreach (FieldInfo fi in fis)
-                {
-                    if (num == 3)
-                    {
-                        try
-                        {
-                            return (fi.GetValue(nu).ToString());
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-                    }
-                    num++;
-                }
-
-            }
-            return "";
+            return getMsgByNum(3);
         }
 
         private String getLastMessageText()
@@ -283,6 +260,65 @@ namespace Admin_Commands
         private String getLastMessageRep()
         {
             return getMsgByNum(9);
+        }
+
+        public void resetChat()
+        {
+            String[] texts = new String[4];
+            texts[0] = getMsgByNum(13);
+            texts[1] = getMsgByNum(20);
+            texts[2] = getMsgByNum(27);
+            texts[3] = getMsgByNum(34);
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (texts[i].StartsWith("/")) {
+                    texts[i] = texts[i].Substring(1);
+                }
+            }
+
+            NetworkPlayer[] players = new NetworkPlayer[4];
+            bool[] isServerMsg = new bool[4];
+            String[] names = new String[4];
+
+            names[0] = getMsgByNum(10);
+            names[1] = getMsgByNum(17);
+            names[2] = getMsgByNum(24);
+            names[3] = getMsgByNum(31);
+
+            for (int i = 0; i < 4; i++)
+            {
+                players[i] = getNetworkPlayerByPlayerName(names[i]);
+                if (names[i].StartsWith("Server"))
+                {
+                    isServerMsg[i] = true;
+                }
+            }
+
+            if (!isServerMsg[3])
+            {
+                getNetworkChat().askChat(texts[3], 0, players[3]);
+            }
+            else
+            {
+                NetworkChat.sendAlert(texts[3]);
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                if (!isServerMsg[3-i])
+                {
+                    getNetworkChat().askChat(texts[3 - i], 0, players[3 - i]);
+                }
+                else
+                {
+                    NetworkChat.sendAlert(texts[3-i]);
+
+                }
+            }
+
+
+
+
         }
 
         private String getMsgByNum(int num2)
@@ -321,7 +357,7 @@ namespace Admin_Commands
 
         private void Log(string p)
         {
-            System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/output.txt", true);
+            System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands_Log.txt", true);
             file.WriteLine(p);
 
             file.Close();
@@ -355,6 +391,7 @@ namespace Admin_Commands
 
         private bool isAdmin(String name)
         {
+            UpdatePlayerList(true);
             for (int i = 0; i < AdminNames.Length; i++)
             {
                 if (AdminNames[i].Equals(name) && AdminSteamIDs[i].Equals(getSteamIDByPlayerName(name)))
@@ -368,6 +405,7 @@ namespace Admin_Commands
 
         private int getAdminLevel(String name)
         {
+            UpdatePlayerList(true);
             for (int i = 0; i < AdminNames.Length; i++)
             {
                 if (AdminNames[i].Equals(name) && AdminSteamIDs[i].Equals(getSteamIDByPlayerName(name)))
@@ -395,7 +433,7 @@ namespace Admin_Commands
                         }
                     }
                 }
-                this.updater2 = 100f;
+                this.updater2 = 500f;
             }
         }
 
@@ -501,14 +539,21 @@ namespace Admin_Commands
             updater2--;
             updater3--;
 
+            checkForCommands();
 
             //Check last (bottom) message for commands
 
+
+        }
+
+        public void checkForCommands()
+        {
             if (getLastMessageText().StartsWith("/"))
             {
                 String sender = getLastMessagePlayerName();
                 String commando = getLastMessageText();
-                NetworkChat.sendAlert(""); //avoid looping into commands
+                resetChat();
+                //NetworkChat.sendAlert(""); //avoid looping into commands
                 lastUsedCommand = commando;
 
                 if (isAdmin(sender))
@@ -543,6 +588,7 @@ namespace Admin_Commands
                                     BAN();
                                 }
                             }
+
                         }
                         else if (commando.StartsWith("/kick") && permLvl >= 1)
                         {
@@ -588,6 +634,7 @@ namespace Admin_Commands
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
                             {
+                                vehicle.tellExploded(false);
                                 vehicle.heal(1000);
                             }
                             NetworkChat.sendAlert(sender + " has repaired all vehicles");
@@ -601,11 +648,28 @@ namespace Admin_Commands
                             }
                             NetworkChat.sendAlert(sender + " has refueled all vehicles");
                         }
+                        else if (commando.StartsWith("/sirens"))
+                        {
+                            Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
+                            foreach (Vehicle vehicle in vehicles)
+                            {
+                                vehicle.tellSirens(true);
+                            }
+                        }
 
                         else if (commando.StartsWith("/resetzombies") && permLvl >= 2)
                         {
                             SpawnAnimals.reset();
                             NetworkChat.sendAlert(sender + " has respawned all zombies");
+                        }
+                        else if (commando.StartsWith("/killzombies"))
+                        {
+                            Zombie[] Zombies = UnityEngine.Object.FindObjectsOfType(typeof(Zombie)) as Zombie[];
+                            foreach (Zombie Zombie in Zombies)
+                            {
+                                Zombie.damage(500);
+                            }
+                            NetworkChat.sendAlert(sender + " has killed all zombies");
                         }
                         else if (commando.StartsWith("/reloadbans") && permLvl >= 3)
                         {
@@ -625,6 +689,16 @@ namespace Admin_Commands
                         {
                             reloadCommands();
                         }
+                        else if (commando.StartsWith("/logmsg"))
+                        {
+                            for (int i = 0; i < 80; i++)
+                            {
+                                Log(getMsgByNum(i));
+                            }
+                        }
+
+
+
                         else if (commando.StartsWith("/enablewhitelist") && permLvl >= 3)
                         {
                             usingWhitelist = true;
@@ -637,6 +711,7 @@ namespace Admin_Commands
                         {
                             String name = commando.Substring(7);
                             unban(name);
+
                         }
                         else if (commando.StartsWith("/tptome") && permLvl >= 1)
                         {
@@ -652,12 +727,14 @@ namespace Admin_Commands
 
                         else if (commando.Equals("/tpall") && permLvl >= 2)
                         {
+                            Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
+                            Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
                             foreach (String name in names)
                             {
 
                                 //There's probably a shorter way to this teleport stuff but hey this works xD
-                                NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
-                                NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation });
+                                NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position = location;
+                                NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { location, rotation });
                             }
                         }
 
@@ -682,16 +759,68 @@ namespace Admin_Commands
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().damage(500, "You were struck down by the Wrath of the Gods!!!");
                         }
 
+                        else if (commando.StartsWith("/heal"))
+                        {
+                            //All of these things are buggy as fuck
+                            String naam = commando.Substring(6);
+                            // NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().tellAllLife(10,0,0,0,true,true);
+                            // NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().tellDead(true, "You were shot in the face with a rocket launcher");
+                            NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().heal(100, true, true);
+                        }
+
+
                         else if (commando.StartsWith("/promote") && permLvl >= 4)
                         {
                             String naam = commando.Substring(9);
 
                             System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt", true);
+                            file.WriteLine("");
                             file.WriteLine(naam + ":" + getSteamIDByPlayerName(naam) + ":1");
                             file.Close();
                             NetworkChat.sendAlert(naam + " was promoted to the role of Moderator. (Level 1 Admin)");
 
                             reloadCommands();
+                        }
+                        else if (commando.StartsWith("/car"))
+                        {
+                            Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
+                            Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
+
+                            Vehicle[] mapVehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
+                            int random = UnityEngine.Random.Range(0, 10);
+                            Vehicle randomVehicle = mapVehicles[random];
+                            Vector3 newPos = new Vector3(location[0] + 5, location[1] + 5, location[2]);
+                            randomVehicle.updatePosition(newPos, rotation);
+                            randomVehicle.transform.position = newPos;
+                        }
+
+
+                        else if (commando.StartsWith("/i "))
+                        {
+                            int itemid = Convert.ToInt32(commando.Split(' ')[1]);
+                            int amount = 1;
+                            if (commando.Split(' ').Length > 2)
+                            {
+                                amount = Convert.ToInt32(commando.Split(' ')[2]);
+                            }
+
+                            Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
+
+                            for (int i = 0; i < amount; i++)
+                                SpawnItems.spawnItem(itemid, 1, location);
+
+                        }
+
+
+
+                        else if (commando.Equals("/kit"))
+                        {
+                            int[] itemids = new int[] { 0x7d4, 0x1b60, 0x2ee0, 0x232c, 0x2711, 0x2afb, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0xfb1, 0x1399, 11, 0x32c8, 0x32c8, 0x36c6, 0x36c6, 0x1f4f, 0x1f4d, 0xbba };
+                            Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
+
+                            foreach (int itemid in itemids)
+                                SpawnItems.spawnItem(itemid, 1, location);
+
                         }
 
                     }
@@ -700,21 +829,29 @@ namespace Admin_Commands
 
                 else
                 {
-                    //KICK(sender, "Did you just kick yourself?");
+
+                    // KICK(sender, "Did you just kick yourself?");
+
                 }
 
+
+                //commands for non-admins
+
                     if (commando.Equals("/online"))
-                        {
-                            getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
-                        }
+                    {
+                        getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
+
+                    }
+                    else if (commando.StartsWith("/time"))
+                    {
+                        NetworkChat.sendAlert("Time: " + Sun.getTime());
+                    }
 
 
-            }
+            } //end checkForCommands()
         }
 
         
-
-
         public void OnGUI()
         {
             GUI.BeginGroup(new Rect(50, 100, 600, 70));
@@ -727,6 +864,7 @@ namespace Admin_Commands
             // End the group we started above. 
             GUI.EndGroup();
         }
+
 
     }
 
