@@ -814,7 +814,7 @@ namespace Admin_Commands
 
 
 
-                        else if (commando.Equals("/kit") && permLvl >= 2)
+                        else if (commando.Equals("/kit") && permLvl >= 2) 
                         {
                             int[] itemids = new int[] { 0x7d4, 0x1b60, 0x2ee0, 0x232c, 0x2711, 0x2afb, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0xfb1, 0x1399, 11, 0x32c8, 0x32c8, 0x36c6, 0x36c6, 0x1f4f, 0x1f4d, 0xbba };
                             Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
