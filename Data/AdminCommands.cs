@@ -51,10 +51,11 @@ namespace Admin_Commands
 
         /*
          * Administrative Permission Level
-         * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason, repairVehicles, refuelVehicles)
-         * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems)
+         * 0: For all users (online, time)
+         * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason, repairVehicles, refuelVehicles, car, heal, sirens)
+         * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems, i, killzombies, kit)
          * 3: Admin Commands (enableWhiteList, disableWhiteList, setannouncedelay)
-         * 4: OP (setItemDelay, reloadCommands, reloadBans)
+         * 4: OP (setItemDelay, reloadCommands, reloadBans, promote, logmsg)
          */
         private Int32[] AdminPermissionLevel;
         
@@ -648,7 +649,7 @@ namespace Admin_Commands
                             }
                             NetworkChat.sendAlert(sender + " has refueled all vehicles");
                         }
-                        else if (commando.StartsWith("/sirens"))
+                        else if (commando.StartsWith("/sirens") && permLvl >= 1)
                         {
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
@@ -662,7 +663,7 @@ namespace Admin_Commands
                             SpawnAnimals.reset();
                             NetworkChat.sendAlert(sender + " has respawned all zombies");
                         }
-                        else if (commando.StartsWith("/killzombies"))
+                        else if (commando.StartsWith("/killzombies") && permLvl >= 2)
                         {
                             Zombie[] Zombies = UnityEngine.Object.FindObjectsOfType(typeof(Zombie)) as Zombie[];
                             foreach (Zombie Zombie in Zombies)
@@ -689,7 +690,7 @@ namespace Admin_Commands
                         {
                             reloadCommands();
                         }
-                        else if (commando.StartsWith("/logmsg"))
+                        else if (commando.StartsWith("/logmsg") && permLvl >= 4)
                         {
                             for (int i = 0; i < 80; i++)
                             {
@@ -759,7 +760,7 @@ namespace Admin_Commands
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().damage(500, "You were struck down by the Wrath of the Gods!!!");
                         }
 
-                        else if (commando.StartsWith("/heal"))
+                        else if (commando.StartsWith("/heal") && permLvl >= 1)
                         {
                             //All of these things are buggy as fuck
                             String naam = commando.Substring(6);
@@ -781,7 +782,7 @@ namespace Admin_Commands
 
                             reloadCommands();
                         }
-                        else if (commando.StartsWith("/car"))
+                        else if (commando.StartsWith("/car") && permLvl >= 1)
                         {
                             Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
                             Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
@@ -795,7 +796,7 @@ namespace Admin_Commands
                         }
 
 
-                        else if (commando.StartsWith("/i "))
+                        else if (commando.StartsWith("/i ") && permLvl >= 2)
                         {
                             int itemid = Convert.ToInt32(commando.Split(' ')[1]);
                             int amount = 1;
@@ -813,7 +814,7 @@ namespace Admin_Commands
 
 
 
-                        else if (commando.Equals("/kit"))
+                        else if (commando.Equals("/kit") && permLvl >= 2)
                         {
                             int[] itemids = new int[] { 0x7d4, 0x1b60, 0x2ee0, 0x232c, 0x2711, 0x2afb, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0x465e, 0xfb1, 0x1399, 11, 0x32c8, 0x32c8, 0x36c6, 0x36c6, 0x1f4f, 0x1f4d, 0xbba };
                             Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
