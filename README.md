@@ -12,7 +12,7 @@ This is the Admin server management commands for servers running Unturned
  --------------------- | ------------------------------------- | -----
  `/ban <player name>/<number>` | Bans a player from the server | 1
  `/kick <player name>/<number>` | Kicks a player from the server | 1
- `/unban <playername>` | Unbans a player from the server | 1
+ `/unban <player name>` | Unbans a player from the server | 1
  `/reason <reason>` | Define the reason a player will receive when being kicked/banned | 1
  `/repeat <announcement>` | Broadcast a server wide announcement | 1
  `/repairvehicles` | Repairs all vehicles on the server | 1
@@ -29,6 +29,7 @@ This is the Admin server management commands for servers running Unturned
  `/setitemsdelay <time in seconds>` | Sets the item spawn delay in seconds | 4
  `/reloadbans` | Reloads Ban List | 4
  `/reloadCommands` | Reloads the utility | 4
+ `/promote <player name>` | Promotes a player to Admin Lvl 1 (Moderator) | 4
  
  **Permission Level System**
  

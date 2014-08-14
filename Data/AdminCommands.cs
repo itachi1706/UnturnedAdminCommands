@@ -14,8 +14,9 @@ namespace Admin_Commands
 
     internal class AdminCommands : MonoBehaviour
     {
-        public String playerID;
         public String playerName = "";
+        public String playerID;
+        
         public float updater;
         public float updater2;
         public float updater3;
@@ -35,14 +36,18 @@ namespace Admin_Commands
         public Timer announceTimer;
 
         public int announceIndex = 0;
-
         public int itemsResetIntervalInSeconds = 2700;
         public int announceIntervalInSeconds = 600;
+        public String[] AnnounceMessages;
 
-        public String ID;
+        public String[] WhitelistedPlayers;
+        public bool usingWhitelist = false;
+
 
         private String[] AdminNames;
         private String[] AdminSteamIDs;
+
+        public String bigAssStringWithBannedPlayerNamesAndSteamIDs = "";   //empty until player issues /unban command
 
         /*
          * Administrative Permission Level
@@ -52,28 +57,22 @@ namespace Admin_Commands
          * 4: OP (setItemDelay, reloadCommands, reloadBans)
          */
         private Int32[] AdminPermissionLevel;
-
-        public String[] AnnounceMessages;
-
-        public String[] WhitelistedPlayers;
-        public bool usingWhitelist = false;
-
-        public String bigAssStringWithBannedPlayerNamesAndSteamIDs = "";   //empty until player issues /unban command
-
-        public String votingURL = "http://unturned-servers.net/api/?object=votes&element=claim&key=qs30wh74jodfohd0qr15m9m9dfjbl4zbb&username=Nessin";
+        
 
 
         public void Start()
         {
-            if (!File.Exists("F:/Unturned Server/ServerData/UnturnedAdmins.txt"))  //create a template for admins
+            Directory.CreateDirectory("Unturned_Data/Managed/mods/AdminCommands");
+
+            if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt"))  //create a template for admins
             {
-                System.IO.StreamWriter file = new StreamWriter("F:/Unturned Server/ServerData/UnturnedAdmins.txt", true);
+                System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt", true);
                 file.WriteLine("Nessin:76561197976976379:4");
                 file.WriteLine("Some Other Admin:12345789:4");
 
                 file.Close();
             }
-            string[] lines = System.IO.File.ReadAllLines(@"F:/Unturned Server/ServerData/UnturnedAdmins.txt");
+            string[] lines = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt");
             AdminNames = new String[lines.Length];
             AdminSteamIDs = new String[lines.Length];
             AdminPermissionLevel = new Int32[lines.Length];
@@ -91,14 +90,14 @@ namespace Admin_Commands
             }
 
             //WHITELIST
-            if (!File.Exists("F:/Unturned Server/ServerData/UnturnedWhitelist.txt"))  //create a template for whitelist
+            if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt"))  //create a template for whitelist
             {
-                System.IO.StreamWriter file = new StreamWriter("F:/Unturned Server/ServerData/UnturnedWhitelist.txt", true);
+                System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt", true);
                 file.WriteLine("Nessin");
                 file.WriteLine("Some other player");
                 file.Close();
             }
-            string[] whitelisteds = System.IO.File.ReadAllLines(@"F:/Unturned Server/ServerData/UnturnedWhitelist.txt");
+            string[] whitelisteds = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt");
             WhitelistedPlayers = new String[whitelisteds.Length];
             for (int i = 0; i < whitelisteds.Length; i++)
             {
@@ -107,9 +106,9 @@ namespace Admin_Commands
 
 
 
-            if (!File.Exists("F:/Unturned Server/ServerData/UnturnedAnnounces.txt"))  //create a template for announcements
+            if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/UnturnedAnnounces.txt"))  //create a template for announcements
             {
-                System.IO.StreamWriter file = new StreamWriter("F:/Unturned Server/ServerData/UnturnedAnnounces.txt", true);
+                System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedAnnounces.txt", true);
                 file.WriteLine("This line will be announced 10 minutes after injecting");
                 file.WriteLine("This line will be announced at the same time");
                 file.WriteLine(":");
@@ -119,7 +118,7 @@ namespace Admin_Commands
                 file.WriteLine("And so forth.. then it will go back to the 1st line");
                 file.Close();
             }
-            string[] announces = System.IO.File.ReadAllLines(@"F:/Unturned Server/ServerData/UnturnedAnnounces.txt");
+            string[] announces = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/UnturnedAnnounces.txt");
             AnnounceMessages = new String[announces.Length];
             for (int i = 0; i < announces.Length; i++)
             {
@@ -148,10 +147,6 @@ namespace Admin_Commands
             announceNext();
         }
 
-        public bool needsVotingReward(String name)
-        {
-            return false;
-        }
 
         private void announceNext()
         {
@@ -282,58 +277,12 @@ namespace Admin_Commands
 
         private String getLastMessageText()
         {
-            NetworkChat[] list = UnityEngine.Object.FindObjectsOfType(typeof(NetworkChat)) as NetworkChat[];
-            int num = 0;
-            FieldInfo[] fis = typeof(NetworkChat).GetFields();
-            foreach (NetworkChat nu in list)
-            {
-                //Log("NetworkChat:" + num);
-                foreach (FieldInfo fi in fis)
-                {
-                    if (num == 6)
-                    {
-                        try
-                        {
-                            return (fi.GetValue(nu).ToString());
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-                    }
-                    num++;
-                }
-
-            }
-            return "";
+            return getMsgByNum(6);
         }
 
         private String getLastMessageRep()
         {
-            NetworkChat[] list = UnityEngine.Object.FindObjectsOfType(typeof(NetworkChat)) as NetworkChat[];
-            int num = 0;
-            FieldInfo[] fis = typeof(NetworkChat).GetFields();
-            foreach (NetworkChat nu in list)
-            {
-                //Log("NetworkChat:" + num);
-                foreach (FieldInfo fi in fis)
-                {
-                    if (num == 9)
-                    {
-                        try
-                        {
-                            return (fi.GetValue(nu).ToString());
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-                    }
-                    num++;
-                }
-
-            }
-            return "";
+            return getMsgByNum(9);
         }
 
         private String getMsgByNum(int num2)
@@ -372,7 +321,7 @@ namespace Admin_Commands
 
         private void Log(string p)
         {
-            System.IO.StreamWriter file = new StreamWriter("F:/Unturned Server/ServerData/output.txt", true);
+            System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/output.txt", true);
             file.WriteLine(p);
 
             file.Close();
@@ -501,6 +450,48 @@ namespace Admin_Commands
             NetworkBans.load();
         }
 
+        void BAN()
+        {
+            Player[] players = GameObject.FindObjectsOfType<Player>();
+            foreach (Player p in players)
+            {
+                if (p.name.Equals(playerName))
+                {
+                    NetworkPlayer np = p.networkView.owner;
+                    NetworkTools.ban(np, playerName, playerID, reason);
+                    return;
+                }
+            }
+        }
+
+        void KICK(String name, String reason)
+        {
+            Player[] players = GameObject.FindObjectsOfType<Player>();
+            foreach (Player p in players)
+            {
+                if (p.name.Equals(name))
+                {
+                    NetworkPlayer np = p.networkView.owner;
+                    NetworkTools.kick(np, reason);
+                    return;
+                }
+            }
+        }
+
+        void KICK()
+        {
+            Player[] players = GameObject.FindObjectsOfType<Player>();
+            foreach (Player p in players)
+            {
+                if (p.name.Equals(playerName))
+                {
+                    NetworkPlayer np = p.networkView.owner;
+                    NetworkTools.kick(np, reason);
+                    return;
+                }
+            }
+        }
+
         public void Update()
         {
             UpdatePlayerList(false);
@@ -509,7 +500,10 @@ namespace Admin_Commands
             updater--;
             updater2--;
             updater3--;
+
+
             //Check last (bottom) message for commands
+
             if (getLastMessageText().StartsWith("/"))
             {
                 String sender = getLastMessagePlayerName();
@@ -542,8 +536,8 @@ namespace Admin_Commands
                             }
                             else
                             {
-                                ID = getSteamIDByPlayerName(naam);
-                                if (!ID.Equals(""))
+                                playerID = getSteamIDByPlayerName(naam);
+                                if (!playerID.Equals(""))
                                 {
                                     playerName = naam;
                                     BAN();
@@ -573,8 +567,8 @@ namespace Admin_Commands
                         }
                         else if (commando.Equals("/yy"))
                         { //ban
-                            ID = getSteamIDByPlayerName(tempBanName);
-                            if (!ID.Equals(""))
+                            playerID = getSteamIDByPlayerName(tempBanName);
+                            if (!playerID.Equals(""))
                             {
                                 playerName = tempBanName;
                                 BAN();
@@ -688,71 +682,37 @@ namespace Admin_Commands
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().damage(500, "You were struck down by the Wrath of the Gods!!!");
                         }
 
-                        else if (commando.Equals("/online"))
+                        else if (commando.StartsWith("/promote") && permLvl >= 4)
                         {
-                            getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
+                            String naam = commando.Substring(9);
+
+                            System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt", true);
+                            file.WriteLine(naam + ":" + getSteamIDByPlayerName(naam) + ":1");
+                            file.Close();
+                            NetworkChat.sendAlert(naam + " was promoted to the role of Moderator. (Level 1 Admin)");
+
+                            reloadCommands();
                         }
+
                     }
 
                 } // end of isAdmin()
 
                 else
                 {
+                    //KICK(sender, "Did you just kick yourself?");
+                }
+
                     if (commando.Equals("/online"))
-                    {
-                        getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
-                    }
-                    else
-                    {
-                        KICK(sender, "Did you just kick yourself?");
-                    }
-                }
+                        {
+                            getNetworkChat().askChat("There are " + names.Length + " players online.", 2, getNetworkPlayerByPlayerName(sender));
+                        }
 
 
             }
         }
 
-        void BAN()
-        {
-            Player[] players = GameObject.FindObjectsOfType<Player>();
-            foreach (Player p in players)
-            {
-                if (p.name.Equals(playerName))
-                {
-                    NetworkPlayer np = p.networkView.owner;
-                    NetworkTools.ban(np, playerName, ID, reason);
-                    return;
-                }
-            }
-        }
-
-        void KICK(String name, String reason)
-        {
-            Player[] players = GameObject.FindObjectsOfType<Player>();
-            foreach (Player p in players)
-            {
-                if (p.name.Equals(name))
-                {
-                    NetworkPlayer np = p.networkView.owner;
-                    NetworkTools.kick(np, reason);
-                    return;
-                }
-            }
-        }
-
-        void KICK()
-        {
-            Player[] players = GameObject.FindObjectsOfType<Player>();
-            foreach (Player p in players)
-            {
-                if (p.name.Equals(playerName))
-                {
-                    NetworkPlayer np = p.networkView.owner;
-                    NetworkTools.kick(np, reason);
-                    return;
-                }
-            }
-        }
+        
 
 
         public void OnGUI()
