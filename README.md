@@ -39,7 +39,7 @@ This is the Admin server management commands for servers running Unturned
  `/disablewhitelist` | Disable whitelisting | 3
  `/whitelist add <player name>` | Adds a player to the whitelist | 3
  `/whitelist remove <player name>` | Removes a player from the whitelist | 3
- `/setannouncedelay` | Set Announcement Delay | 3
+ `/setannouncedelay <time in seconds>` | Set Announcement Delay | 3
  `/setitemsdelay <time in seconds>` | Sets the item spawn delay in seconds | 4
  `/reloadbans` | Reloads Ban List | 4
  `/reloadCommands` | Reloads the utility | 4
