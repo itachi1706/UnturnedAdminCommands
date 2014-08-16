@@ -12,6 +12,8 @@ This is the Admin server management commands for servers running Unturned
  --------------------- | ------------------------------------- | -----
  `/time` | Shows the current time on the server | 0
  `/online` | List the number of players currently online | 0
+ `/home` | Teleports back to home | 0
+ `/sethome` | Sets home | 0
  `/ban <player name>/<number>` | Bans a player from the server | 1
  `/kick <player name>/<number>` | Kicks a player from the server | 1
  `/unban <player name>` | Unbans a player from the server | 1

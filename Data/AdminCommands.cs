@@ -64,7 +64,7 @@ namespace Admin_Commands
 
         /*
          * Administrative Permission Level
-         * 0: For all users (online, time)
+         * 0: For all users (online, time, home, sethome)
          * 1: Moderation Commands (ban,kick,unban,tp,tptome,repeat,reason,repairVehicles,refuelVehicles,car,heal,sirens,sirensoff,tpto)
          * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems, i, killzombies, kit)
          * 3: Admin Commands (enableWhiteList, disableWhiteList, setannouncedelay,whitelist add, whitelist remove)
