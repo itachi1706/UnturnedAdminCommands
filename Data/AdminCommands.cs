@@ -22,6 +22,12 @@ namespace Admin_Commands
         public float updater2;
         public float updater3;
 
+        public NetworkChat networkchat;
+        public FieldInfo[] networkChatfields = typeof(NetworkChat).GetFields();
+        FieldInfo[] networkUserfields = typeof(NetworkUser).GetFields();
+
+
+
 
         private Vector2 scrollViewVector = Vector2.zero;
         public Rect dropDownRect = new Rect(100, 40, 325, 300);
@@ -43,11 +49,17 @@ namespace Admin_Commands
         public String[] WhitelistedPlayers;
         public bool usingWhitelist = false;
 
+        public bool usingGUI = true;
+        public Boolean hideCommands = true;
+        public bool usePlayerHomes = false;
+
 
         private String[] AdminNames;
         private String[] AdminSteamIDs;
 
         public String bigAssStringWithBannedPlayerNamesAndSteamIDs = "";   //empty until player issues /unban command
+
+        Dictionary<String, Vector3> playerHomes =  new Dictionary<String, Vector3>();
 
         /*
          * Administrative Permission Level
@@ -60,9 +72,39 @@ namespace Admin_Commands
         private Int32[] AdminPermissionLevel;
         
 
+
         public void Start()
         {
             Directory.CreateDirectory("Unturned_Data/Managed/mods/AdminCommands");
+
+
+            if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/config.ini"))  //create a template for admins
+            {
+
+                IniFile tempIni = new IniFile("Unturned_Data/Managed/mods/AdminCommands/config.ini");
+
+                tempIni.IniWriteValue("Config", "Using Whitelist", "false");
+                tempIni.IniWriteValue("Config", "Using Player Homes", "false");
+                tempIni.IniWriteValue("Config", "Show gui", "true");
+                tempIni.IniWriteValue("Config", "Try to hide commands", "true");
+
+                tempIni.IniWriteValue("Timers", "Time between item respawns in seconds", "2700");
+                tempIni.IniWriteValue("Timers", "Time between announces in seconds", "600");
+
+
+            }
+
+            IniFile ini = new IniFile("Unturned_Data/Managed/mods/AdminCommands/config.ini");
+
+            usingWhitelist = Boolean.Parse(ini.IniReadValue("Config", "Using Whitelist"));
+            usingGUI = Boolean.Parse(ini.IniReadValue("Config", "Show gui"));
+            usePlayerHomes = Boolean.Parse(ini.IniReadValue("Config", "Using Player Homes"));
+            hideCommands = Boolean.Parse(ini.IniReadValue("Config", "Try to hide commands"));
+
+            itemsResetIntervalInSeconds = Int32.Parse(ini.IniReadValue("Timers", "Time between item respawns in seconds"));
+            announceIntervalInSeconds = Int32.Parse(ini.IniReadValue("Timers", "Time between announces in seconds"));
+
+            Log(usingWhitelist.ToString());
 
             if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt"))  //create a template for admins
             {
@@ -107,18 +149,36 @@ namespace Admin_Commands
                 WhitelistedPlayers[i] = whitelisteds[i];
             }
 
+            string[] tempHomes = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/playerHomes.txt");
+
+            for (int i = 0; i < tempHomes.Length; i++)
+            {
+                String id = tempHomes[i].Split(':')[0];
+                String location = tempHomes[i].Split(':')[1];
+
+                String x = location.Split(',')[0];
+                String y = location.Split(',')[1];
+                String z = location.Split(',')[2];
+
+                Vector3 loc = new Vector3(Convert.ToSingle(x), Convert.ToSingle(y), Convert.ToSingle(z));
+
+                playerHomes[id] = loc;
+            }
+
+
 
 
             if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/UnturnedAnnounces.txt"))  //create a template for announcements
             {
                 System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedAnnounces.txt", true);
-                file.WriteLine("This line will be announced 10 minutes after injecting");
+                file.WriteLine("This line will be announced 10 minutes after injecting (or whatever you change the interval to)");
                 file.WriteLine("This line will be announced at the same time");
                 file.WriteLine(":");
-                file.WriteLine("This line will be announced 20 minutes after injecting");
+                file.WriteLine("This line will be announced 20 minutes after injecting  (2x interval)");
                 file.WriteLine(":");
-                file.WriteLine("This line will be announced 30 minutes after injecting");
-                file.WriteLine("And so forth.. then it will go back to the 1st line");
+                file.WriteLine(":");
+                file.WriteLine("This line will be announced 40 minutes after injecting  (4x interval)");
+                file.WriteLine("And so forth.. then it will go back to the 1st line      (4x interval)");
                 file.Close();
             }
             string[] announces = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/UnturnedAnnounces.txt");
@@ -202,14 +262,17 @@ namespace Admin_Commands
             SpawnItems.reset();
         }
 
-        private void UpdatePlayerList(bool forceUpdate)
+        private void UpdatePlayerList(bool forceUpdate = false)
         {
             if (this.updater <= 1f || forceUpdate == true)
             {
+                if (networkchat == null)
+                    networkchat = getNetworkChat();
+
                 Player[] players = UnityEngine.Object.FindObjectsOfType(typeof(Player)) as Player[];
                 names = new String[players.Length];
                 ids = new String[players.Length];
-                FieldInfo[] fis = typeof(NetworkUser).GetFields();
+
                 for (int i = 0; i < players.Length; i++)
                 {
                     names[i] = players[i].name;
@@ -217,28 +280,11 @@ namespace Admin_Commands
                     NetworkPlayer np = players[i].networkView.owner;
                     NetworkUser nu = NetworkUserList.getUserFromPlayer(np);
 
-                    int num = 0;
+                    ids[i] = networkUserfields[3].GetValue(nu).ToString();
 
-
-                    foreach (FieldInfo fi in fis)
-                    {
-                        if (num == 3)
-                        {
-                            try
-                            {
-                                ids[i] = fi.GetValue(nu).ToString();
-                                break;
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-                        }
-                        num++;
-                    }
                 }
                 if (names.Length == 0)
-                {
+                { //forgot why I did this but I must've had a reason cuz the mod doesnt work without this
                     names = new String[1];
                     ids = new String[1];
                 }
@@ -324,30 +370,16 @@ namespace Admin_Commands
 
         private String getMsgByNum(int num2)
         {
-            NetworkChat[] list = UnityEngine.Object.FindObjectsOfType(typeof(NetworkChat)) as NetworkChat[];
-            int num = 0;
-            FieldInfo[] fis = typeof(NetworkChat).GetFields();
-            foreach (NetworkChat nu in list)
+            try
             {
-                //Log("NetworkChat:" + num);
-                foreach (FieldInfo fi in fis)
-                {
-                    if (num == num2)
-                    {
-                        try
-                        {
-                            return (fi.GetValue(nu).ToString());
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-                    }
-                    num++;
-                }
-
+                return networkChatfields[num2].GetValue(networkchat).ToString();
             }
-            return "";
+            catch
+            {
+                return "";
+            }
+
+
         }
 
         private NetworkChat getNetworkChat()
@@ -458,6 +490,8 @@ namespace Admin_Commands
             bigAssStringWithBannedPlayerNamesAndSteamIDs = PlayerPrefs.GetString("bans");
         }
 
+
+
         public void saveBans()
         {
             PlayerPrefs.SetString("bans", bigAssStringWithBannedPlayerNamesAndSteamIDs);
@@ -531,9 +565,48 @@ namespace Admin_Commands
             }
         }
 
+
+        private void setHome(string steamID, Vector3 location)
+        {
+            if (playerHomes.ContainsKey(steamID))
+            {
+                string[] lines = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/PlayerHomes.txt");
+                File.Delete("Unturned_Data/Managed/mods/AdminCommands/PlayerHomes.txt");
+
+                System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/PlayerHomes.txt", true);
+
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (!lines[i].StartsWith(steamID))
+                    {
+                        file.WriteLine(lines[i]);
+                    }
+
+                }
+                file.Close();
+            }
+            System.IO.StreamWriter file2 = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/PlayerHomes.txt", true);
+            file2.WriteLine(steamID + ":" + location.x + "," + location.y + "," + location.z);
+            file2.Close();
+            playerHomes[steamID] = location;
+        }
+
+        private void home(String name, string steamID)
+        {
+            //etworkChat.sendAlert(name + ":" + steamID + " try teleport home");
+            // NetworkChat.sendAlert("loc: " + playerHomes[steamID].x + ","+ playerHomes[steamID].y + "," + playerHomes[steamID].z);
+
+
+            NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { playerHomes[steamID], NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.rotation });
+
+            // NetworkChat.sendAlert(" teleport done");
+
+        } 
+
         public void Update()
         {
-            UpdatePlayerList(false);
+            UpdatePlayerList();
             kickFakeAdmins();
             kickNonWhitelistedPlayers();
             updater--;
@@ -551,10 +624,16 @@ namespace Admin_Commands
         {
             if (getLastMessageText().StartsWith("/"))
             {
+                UpdatePlayerList(true);
+
                 String sender = getLastMessagePlayerName();
                 String commando = getLastMessageText();
+
+                if (hideCommands)
                 resetChat();
-                //NetworkChat.sendAlert(""); //avoid looping into commands
+                else
+                NetworkChat.sendAlert(""); //avoid looping into commands
+
                 lastUsedCommand = commando;
 
                 if (isAdmin(sender))
@@ -577,17 +656,13 @@ namespace Admin_Commands
                             if (naam.Length < 3)
                             {
                                 naam = names[Convert.ToInt32(naam)];
-                                getNetworkChat().askChat("Ban " + naam + " ?  /yy to confirm", 2, getNetworkPlayerByPlayerName(sender));
                                 tempBanName = naam;
+                                getNetworkChat().askChat("Reason for banning " + naam + " ?  /reason <reason> to ban", 2, getNetworkPlayerByPlayerName(sender));
                             }
                             else
                             {
-                                playerID = getSteamIDByPlayerName(naam);
-                                if (!playerID.Equals(""))
-                                {
-                                    playerName = naam;
-                                    BAN();
-                                }
+                                tempBanName = naam;
+                                getNetworkChat().askChat("Reason for banning " + naam + " ?  /reason <reason> to ban", 2, getNetworkPlayerByPlayerName(sender));
                             }
 
                         }
@@ -612,7 +687,7 @@ namespace Admin_Commands
                             playerName = tempKickName;
                             KICK();
                         }
-                        else if (commando.Equals("/yy"))
+                        /*else if (commando.Equals("/yy"))
                         { //ban
                             playerID = getSteamIDByPlayerName(tempBanName);
                             if (!playerID.Equals(""))
@@ -620,10 +695,16 @@ namespace Admin_Commands
                                 playerName = tempBanName;
                                 BAN();
                             }
-                        }
+                        }*/
                         else if (commando.StartsWith("/reason") && permLvl >= 1)
                         {
                             reason = commando.Substring(8);
+                            playerID = getSteamIDByPlayerName(tempBanName);
+                            if (!playerID.Equals(""))
+                            {
+                                playerName = tempBanName;
+                                BAN();
+                            }
                         }
                         else if (commando.StartsWith("/resetitems") && permLvl >= 2)
                         {
@@ -635,10 +716,12 @@ namespace Admin_Commands
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
                             {
-                                vehicle.tellExploded(false);
+                                vehicle.networkView.RPC("tellExploded", RPCMode.All, new object[] { false });
+                                vehicle.networkView.RPC("tellWrecked", RPCMode.All, new object[] { false });
+
                                 vehicle.heal(1000);
                             }
-                            NetworkChat.sendAlert(sender + " has repaired all vehicles");
+                            NetworkChat.sendAlert(sender + " has repaired " + vehicles.Length + " vehicles");
                         }
                         else if (commando.StartsWith("/refuelvehicles") && permLvl >= 1)
                         {
@@ -647,14 +730,22 @@ namespace Admin_Commands
                             {
                                 vehicle.fill(1000);
                             }
-                            NetworkChat.sendAlert(sender + " has refueled all vehicles");
+                            NetworkChat.sendAlert(sender + " has refueled " + vehicles.Length + " vehicles");
                         }
                         else if (commando.StartsWith("/sirens") && permLvl >= 1)
                         {
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
                             {
-                                vehicle.tellSirens(true);
+                                vehicle.networkView.RPC("tellSirens", RPCMode.All, new object[] { true });
+                            }
+                        }
+                        else if (commando.Equals("/sirensoff"))
+                        {
+                            Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
+                            foreach (Vehicle vehicle in vehicles)
+                            {
+                                vehicle.networkView.RPC("tellSirens", RPCMode.All, new object[] { false });
                             }
                         }
 
@@ -670,7 +761,7 @@ namespace Admin_Commands
                             {
                                 Zombie.damage(500);
                             }
-                            NetworkChat.sendAlert(sender + " has killed all zombies");
+                            NetworkChat.sendAlert(sender + " has killed "+ Zombies.Length +" zombies");
                         }
                         else if (commando.StartsWith("/reloadbans") && permLvl >= 3)
                         {
@@ -708,10 +799,60 @@ namespace Admin_Commands
                         {
                             usingWhitelist = false;
                         }
+                        else if (commando.StartsWith("/whitelist add"))
+                        {
+                            String naam = commando.Substring(15);
+
+                            System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt", true);
+                            file.WriteLine("");
+                            file.WriteLine(naam);
+                            file.Close();
+
+                            reloadCommands();
+                        }
+                        else if (commando.StartsWith("/whitelist remove "))
+                        {
+                            String naam = commando.Substring(18);
+
+                            string[] lines = System.IO.File.ReadAllLines(@"Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt");
+                            File.Delete("Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt");
+
+                            System.IO.StreamWriter file = new StreamWriter("Unturned_Data/Managed/mods/AdminCommands/UnturnedWhitelist.txt", true);
+
+
+                            for (int i = 0; i < lines.Length; i++)
+                            {
+                                if (!lines[i].Equals(naam))
+                                {
+                                    file.WriteLine(lines[i]);
+                                }
+
+                            }
+
+
+                            file.Close();
+
+                            reloadCommands();
+                        }
                         else if (commando.StartsWith("/unban") && permLvl >= 1)
                         {
                             String name = commando.Substring(7);
                             unban(name);
+
+                        }
+                        else if (commando.StartsWith("/tp "))
+                        {
+                            String locString = commando.Substring(4);
+                            Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
+
+
+                            float x = float.Parse(locString.Split(' ')[0]);
+                            float y = float.Parse(locString.Split(' ')[1]);
+                            float z = float.Parse(locString.Split(' ')[2]);
+
+                            //NetworkChat.sendAlert(x + " , " + y + " , " + z);
+
+                            NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { new Vector3(x,y,z) , rotation});
 
                         }
                         else if (commando.StartsWith("/tptome") && permLvl >= 1)
@@ -728,6 +869,7 @@ namespace Admin_Commands
 
                         else if (commando.Equals("/tpall") && permLvl >= 2)
                         {
+
                             Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
                             Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
                             foreach (String name in names)
@@ -739,17 +881,21 @@ namespace Admin_Commands
                             }
                         }
 
-                        else if (commando.StartsWith("/tp") && permLvl >= 1)  //make sure this goes under /tptome
+                        else if (commando.StartsWith("/tpto ") && permLvl >= 1)  //make sure this goes under /tptome
                         {
-                            String name = commando.Substring(4);
+                            String name = commando.Substring(6);
                             if (name.Length < 3)
                             {
                                 name = names[Convert.ToInt32(name)];
                             }
+
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position;
                             NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.position, NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(name)).transform.rotation });
 
                         }
+
+
+
 
                         else if (commando.StartsWith("/kill") && permLvl >= 2)
                         {
@@ -787,12 +933,17 @@ namespace Admin_Commands
                             Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
                             Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
 
+
                             Vehicle[] mapVehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
-                            int random = UnityEngine.Random.Range(0, 10);
+
+                            int random = UnityEngine.Random.Range(0, mapVehicles.Length);
                             Vehicle randomVehicle = mapVehicles[random];
-                            Vector3 newPos = new Vector3(location[0] + 5, location[1] + 5, location[2]);
+
+                            Vector3 newPos = new Vector3(location[0] + 5, location[1] + 50, location[2]);
+
                             randomVehicle.updatePosition(newPos, rotation);
                             randomVehicle.transform.position = newPos;
+
                         }
 
 
@@ -848,22 +999,51 @@ namespace Admin_Commands
                         NetworkChat.sendAlert("Time: " + Sun.getTime());
                     }
 
+                    else if (commando.Equals("/sethome"))
+                    {
+                        if (usePlayerHomes)
+                        {
+                            Vector3 location = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.position;
 
-            } //end checkForCommands()
-        }
+                            setHome(getSteamIDByPlayerName(sender), location);
+                        
+
+                            getNetworkChat().askChat("Home set.", 2, getNetworkPlayerByPlayerName(sender));
+                        }
+                    }
+
+                    else if (commando.Equals("/home"))
+                    {
+                        if (usePlayerHomes)
+                        {
+                            //getNetworkChat().askChat("Teleporting home in 5 seconds...", 2, getNetworkPlayerByPlayerName(sender));
+                            //Thread.Sleep(5000);
+                            // what use has a delay if I cant check if the player moves while waiting ...
+                            home(sender, getSteamIDByPlayerName(sender));
+                            getNetworkChat().askChat("Teleported home. Don't move for 5 seconds if you don't wanna get kicked", 2, getNetworkPlayerByPlayerName(sender));
+                        }
+                    }
+
+            }// end of text.startswith("/")
+        }//end checkForCommands()
 
         
+
         public void OnGUI()
         {
-            GUI.BeginGroup(new Rect(50, 100, 600, 70));
-            // All rectangles are now adjusted to the group. (0,0) is the topleft corner of the group.
+            if (usingGUI)
+            {
+                GUI.BeginGroup(new Rect(50, 100, 600, 70));
+                // All rectangles are now adjusted to the group. (0,0) is the topleft corner of the group.
 
-            // We'll make a box so you can see where the group is on-screen.
-            GUI.Box(new Rect(0, 0, 530, 400), "Admin Commands running! Last command used: " + lastUsedCommand);
+                // We'll make a box so you can see where the group is on-screen.
+                GUI.Box(new Rect(0, 0, 530, 400), "Admin Commands running! Last command used: " + lastUsedCommand);
 
 
-            // End the group we started above. 
-            GUI.EndGroup();
+                // End the group we started above. 
+                GUI.EndGroup();
+            }
+
         }
 
 
