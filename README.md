@@ -20,10 +20,12 @@ This is the Admin server management commands for servers running Unturned
  `/repairvehicles` | Repairs all vehicles on the server | 1
  `/refuelvehicles` | Refuels all vehicles on the server | 1
  `/car` | Teleports a random car from anywhere in the map to you | 1
- `/sirens` | Enable sirens on all vehicles that supports it (Horns too maybe) | 1
+ `/sirens` | Enable sirens on all vehicles that supports it | 1
+ `/sirensoff` | Turns car sirens off | 1
  `/heal <player name>` | Heals a player | 1
- `/tp <player name>/<number>` | Teleport to a player | 1
+ `/tp <x> <y> <z>` | Teleport to a specific coordinate | 1
  `/tptome <player name>/<number>` | Teleports a player to you | 1
+ `/tpto <player name>/<number>` | Teleport to a player | 1
  `/tpall` | Teleports all players to you | 2
  `/killzombies` | Kills all of the zombies on the map | 2
  `/resetzombies` | Resets and respawns all zombies on the server | 2
@@ -33,12 +35,15 @@ This is the Admin server management commands for servers running Unturned
  `/kill <playername>` | Kills a player | 2
  `/enablewhitelist` | Enables whitelisting | 3
  `/disablewhitelist` | Disable whitelisting | 3
+ `/whitelist add <player name>` | Adds a player to the whitelist | 3
+ `/whitelist remove <player name>` | Removes a player from the whitelist | 3
  `/setannouncedelay` | Set Announcement Delay | 3
  `/setitemsdelay <time in seconds>` | Sets the item spawn delay in seconds | 4
  `/reloadbans` | Reloads Ban List | 4
  `/reloadCommands` | Reloads the utility | 4
  `/promote <player name>` | Promotes a player to Admin Lvl 1 (Moderator) | 4
  `/logmsg` | *DEBUG* Logs a message to CONSOLE | 4
+ 
  
  **Permission Level System**
  
