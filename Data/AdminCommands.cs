@@ -65,9 +65,9 @@ namespace Admin_Commands
         /*
          * Administrative Permission Level
          * 0: For all users (online, time)
-         * 1: Moderation Commands (ban,kick,unban,tp,tptome, repeat, reason, repairVehicles, refuelVehicles, car, heal, sirens)
+         * 1: Moderation Commands (ban,kick,unban,tp,tptome,repeat,reason,repairVehicles,refuelVehicles,car,heal,sirens,sirensoff,tpto)
          * 2: Trusted Moderation Commands (tpall, kill, resetZombies, resetItems, i, killzombies, kit)
-         * 3: Admin Commands (enableWhiteList, disableWhiteList, setannouncedelay)
+         * 3: Admin Commands (enableWhiteList, disableWhiteList, setannouncedelay,whitelist add, whitelist remove)
          * 4: OP (setItemDelay, reloadCommands, reloadBans, promote, logmsg)
          */
         private Int32[] AdminPermissionLevel;
@@ -741,7 +741,7 @@ namespace Admin_Commands
                                 vehicle.networkView.RPC("tellSirens", RPCMode.All, new object[] { true });
                             }
                         }
-                        else if (commando.Equals("/sirensoff"))
+                        else if (commando.Equals("/sirensoff") && permLvl >= 1)
                         {
                             Vehicle[] vehicles = UnityEngine.Object.FindObjectsOfType(typeof(Vehicle)) as Vehicle[];
                             foreach (Vehicle vehicle in vehicles)
@@ -800,7 +800,7 @@ namespace Admin_Commands
                         {
                             usingWhitelist = false;
                         }
-                        else if (commando.StartsWith("/whitelist add"))
+                        else if (commando.StartsWith("/whitelist add") && permLvl >= 3)
                         {
                             String naam = commando.Substring(15);
 
@@ -811,7 +811,7 @@ namespace Admin_Commands
 
                             reloadCommands();
                         }
-                        else if (commando.StartsWith("/whitelist remove "))
+                        else if (commando.StartsWith("/whitelist remove ") && permLvl >= 3)
                         {
                             String naam = commando.Substring(18);
 
@@ -841,7 +841,7 @@ namespace Admin_Commands
                             unban(name);
 
                         }
-                        else if (commando.StartsWith("/tp "))
+                        else if (commando.StartsWith("/tp ") && permLvl >= 1)
                         {
                             String locString = commando.Substring(4);
                             Quaternion rotation = NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).transform.rotation;
