@@ -820,7 +820,7 @@ namespace Admin_Commands
                     if (getAdminLevel(sender) == -1)
                     {
                         getNetworkChat().askChat("An error occured! You appear to not have Admin Rights!", 2, getNetworkPlayerByPlayerName(sender));
-                        return
+                        return;
                     }
                     int permLvl = getAdminLevel(sender);
                     if (commando.StartsWith("/repeat") && permLvl >= 1)
