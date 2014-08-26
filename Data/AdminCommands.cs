@@ -1113,7 +1113,7 @@ namespace Admin_Commands
                         NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(naam)).GetComponent<Life>().damage(500, "You were struck down by the Wrath of the Gods!!!");
                     }
 
-                    else if (commando.Equals("/heal"))
+                    else if (commando.Equals("/heal") && permLvl >= 1)
                     {
                         resetChat();
                         NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().heal(100, true, true);
@@ -1141,21 +1141,27 @@ namespace Admin_Commands
 
                         reloadCommands();
                     }
-                    else if (commando.Equals("/commands") && permLvl > 1)
+                    else if (commando.Equals("/commands") && permLvl >= 1)
                     {
                         resetChat();
 
-                        String string1 = " /ban, /kick, /repeat, /reason, /resetitems, /repairvehicles, /refuelvehicles";
-                        String string2 = " /resetzombies, /killzombies, /kill, /setitemsdelay, /enablewhitelist";
-                        String string3 = " /disablewhitelist, /whitelist add & remove, /unban, /reloadCommands, ";
-                        String string4 = " /tptome <playername>, /promote, /online, /heal, /tp, /tpto <x> <y> <z>";
-                        String string5 = " /i <itemid> <amount>, /car, /kit /sethome, /home  (if enabled)";
+                        String string1 = " /ban, /kick, /unban, /repeat, /reason, /repairvehicles, /refuelvehicles, /car";
+                        String string2 = " /heal, /sirens, /sirensoff, /tp, /tpto <x> <y> <z>, /tptome, /home, /sethome";
+                        String string3 = " /tpall, /kill, /resetZombies, /resetItems, /i, /killzombies, /kit ";
+                        String string4 = " /enablewhitelist, /disablewhitelist, /whitelist add & remove, /setannouncedelay";
+                        String string5 = " /setItemDelay <seconds>, /reloadCommands, /reloadBans /promote, /logmsg";
 
                         getNetworkChat().askChat(string1, 2, getNetworkPlayerByPlayerName(sender));
                         getNetworkChat().askChat(string2, 2, getNetworkPlayerByPlayerName(sender));
-                        getNetworkChat().askChat(string3, 2, getNetworkPlayerByPlayerName(sender));
-                        getNetworkChat().askChat(string4, 2, getNetworkPlayerByPlayerName(sender));
-                        getNetworkChat().askChat(string5, 2, getNetworkPlayerByPlayerName(sender));
+                        if (permLvl >= 2) {
+                            getNetworkChat().askChat(string3, 2, getNetworkPlayerByPlayerName(sender));
+                        }
+                        if (permLvl >= 3) {
+                            getNetworkChat().askChat(string4, 2, getNetworkPlayerByPlayerName(sender));
+                        }
+                        if (permLvl >= 4) {
+                            getNetworkChat().askChat(string5, 2, getNetworkPlayerByPlayerName(sender));
+                        }
 
                     }
                     else if (commando.StartsWith("/car") && permLvl >= 1)
