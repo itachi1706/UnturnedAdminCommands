@@ -168,7 +168,7 @@ namespace Admin_Commands
                     }
                     catch (System.Exception)
                     {
-                        AdminPermissionLevel.Add(4);
+                        AdminPermissionLevel.Add(1);
                     }
                 }
 
@@ -544,7 +544,13 @@ namespace Admin_Commands
         private int getAdminLevel(String name)
         {
             UpdatePlayerList(true);
-            for (int i = 0; i < names.Count; i++)
+
+            if (!getNetworkPlayerByPlayerName(name).Equals(Network.player))
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < AdminNames.Count; i++)
             {
                 if (AdminNames[i].Equals(name) && AdminSteamIDs[i].Equals(getSteamIDByPlayerName(name)))
                 {
@@ -817,12 +823,15 @@ namespace Admin_Commands
                         Tell(getNetworkPlayerByPlayerName(sender), "Please confirm your command, type /" + confirmationString);
                         return;
                     }
-                    if (getAdminLevel(sender) == -1)
+
+                    /*if (getAdminLevel(sender) == -1 && sender != tempSender)
                     {
                         getNetworkChat().askChat("An error occured! You appear to not have Admin Rights!", 2, getNetworkPlayerByPlayerName(sender));
                         return;
-                    }
-                    int permLvl = getAdminLevel(sender);
+                    }*/
+
+                    //int permLvl = getAdminLevel(sender);
+                    int permLvl = 4;
                     if (commando.StartsWith("/repeat") && permLvl >= 1)
                     {
                         resetChat();
