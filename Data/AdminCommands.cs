@@ -17,7 +17,7 @@ namespace Admin_Commands
 
         public String playerName = "";
         public String playerID;
-        
+
         public float updater;
         public float updater2;
         public float updater3;
@@ -67,7 +67,7 @@ namespace Admin_Commands
 
         public String bigAssStringWithBannedPlayerNamesAndSteamIDs = "";   //empty until player issues /unban command
 
-        Dictionary<String, Vector3> playerHomes =  new Dictionary<String, Vector3>();
+        Dictionary<String, Vector3> playerHomes = new Dictionary<String, Vector3>();
 
         /*
          * Administrative Permission Level
@@ -137,7 +137,7 @@ namespace Admin_Commands
             itemsResetIntervalInSeconds = Int32.Parse(ini.IniReadValue("Timers", "Time between item respawns in seconds"));
             announceIntervalInSeconds = Int32.Parse(ini.IniReadValue("Timers", "Time between announces in seconds"));
 
-            
+
 
 
             if (!File.Exists("Unturned_Data/Managed/mods/AdminCommands/UnturnedAdmins.txt"))  //create a template for admins
@@ -163,7 +163,8 @@ namespace Admin_Commands
                 {
                     AdminNames.Add(adminLines[i].Split(':')[0]);
                     AdminSteamIDs.Add(adminLines[i].Split(':')[1]);
-                    try {
+                    try
+                    {
                         AdminPermissionLevel.Add(Convert.ToInt32(adminLines[i].Split(':')[2]));
                     }
                     catch (System.Exception)
@@ -349,7 +350,7 @@ namespace Admin_Commands
 
                     ids.Add(networkUserfields[3].GetValue(nu).ToString());
                 }
-                
+
                 this.updater = 500f;
             }
         }
@@ -392,7 +393,8 @@ namespace Admin_Commands
 
         public void resetChat()
         {
-            if (hideCommands) {
+            if (hideCommands)
+            {
 
                 String[] texts = new String[4];
                 texts[0] = getNetworkChatFieldByNum(13);
@@ -719,7 +721,7 @@ namespace Admin_Commands
             networkchat.tellChat_Pizza(tempSender, "", "pass", text, 0x7fffffff, 1, -1);
 
             //networkchat.tellChat(tempSender, "", "", text, 0x7fffffff, 1, 20);
-        } 
+        }
 
         public void Update()
         {
@@ -803,10 +805,10 @@ namespace Admin_Commands
                     return;
                 }
 
-                if (isAdmin(sender) || (usingConsole && groupString.Equals(ConsolePassword)) )
+                if (isAdmin(sender) || (usingConsole && groupString.Equals(ConsolePassword)))
                 {
 
-                    if (!groupString.Equals(ConsolePassword) && requireCommandConfirmation && !commandconfirmed && commando.ToUpper().Equals("/"+confirmationString.ToUpper()))
+                    if (!groupString.Equals(ConsolePassword) && requireCommandConfirmation && !commandconfirmed && commando.ToUpper().Equals("/" + confirmationString.ToUpper()))
                     {
                         resetChat();
                         commandconfirmed = true;
@@ -954,7 +956,7 @@ namespace Admin_Commands
                         {
                             Zombie.damage(500);
                         }
-                        NetworkChat.sendAlert(sender + " has killed "+ Zombies.Length +" zombies");
+                        NetworkChat.sendAlert(sender + " has killed " + Zombies.Length + " zombies");
                     }
                     else if (commando.StartsWith("/reloadbans") && permLvl >= 3)
                     {
@@ -1060,7 +1062,7 @@ namespace Admin_Commands
 
                         //NetworkChat.sendAlert(x + " , " + y + " , " + z);
 
-                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { new Vector3(x,y,z) , rotation});
+                        NetworkUserList.getModelFromPlayer(getNetworkPlayerByPlayerName(sender)).GetComponent<Life>().networkView.RPC("tellStatePosition", RPCMode.All, new object[] { new Vector3(x, y, z), rotation });
 
                     }
                     else if (commando.StartsWith("/tptome") && permLvl >= 1)
@@ -1162,13 +1164,16 @@ namespace Admin_Commands
 
                         getNetworkChat().askChat(string1, 2, getNetworkPlayerByPlayerName(sender));
                         getNetworkChat().askChat(string2, 2, getNetworkPlayerByPlayerName(sender));
-                        if (permLvl >= 2) {
+                        if (permLvl >= 2)
+                        {
                             getNetworkChat().askChat(string3, 2, getNetworkPlayerByPlayerName(sender));
                         }
-                        if (permLvl >= 3) {
+                        if (permLvl >= 3)
+                        {
                             getNetworkChat().askChat(string4, 2, getNetworkPlayerByPlayerName(sender));
                         }
-                        if (permLvl >= 4) {
+                        if (permLvl >= 4)
+                        {
                             getNetworkChat().askChat(string5, 2, getNetworkPlayerByPlayerName(sender));
                         }
 
@@ -1236,9 +1241,9 @@ namespace Admin_Commands
                 }
 
 
-                
 
-            commandconfirmed = false;
+
+                commandconfirmed = false;
 
             }   // end of text.startswith("/")
         }//end checkForCommands()
@@ -1250,7 +1255,8 @@ namespace Admin_Commands
             {
                 networkchat.tellChat_Pizza("Server", "", "", text, 0x7fffffff, 3, 20);
             }
-            else {
+            else
+            {
                 object[] args = new object[] { "[Server]", "", "", text, 1, 1, 20 };
                 networkchat.networkView.RPC("tellChat", p, args);
             }

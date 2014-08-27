@@ -6,3 +6,4 @@ C:\Users\NP\Documents\GitHub\UnturnedAdminCommands\Data\bin\Release\AdminCommand
 C:\Users\NP\Documents\GitHub\UnturnedAdminCommands\Data\bin\Release\AdminCommands.pdb
 C:\Users\NP\Documents\GitHub\UnturnedAdminCommands\Data\obj\Release\AdminCommands.dll
 C:\Users\NP\Documents\GitHub\UnturnedAdminCommands\Data\obj\Release\AdminCommands.pdb
+C:\Users\NP\Documents\GitHub\UnturnedAdminCommands\Data\obj\Release\AdminCommands.csprojResolveAssemblyReference.cache
